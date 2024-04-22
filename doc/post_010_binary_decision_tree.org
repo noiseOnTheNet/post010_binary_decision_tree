@@ -1,0 +1,48 @@
+#+ORG2BLOG:
+#+DATE: [2024-04-21 dom 17:57]
+#+OPTIONS: toc:nil num:nil todo:nil pri:nil tags:nil ^:nil
+#+CATEGORY: Org2Blog, WordPress
+#+TAGS: Emacs, Lisp
+#+DESCRIPTION:
+#+TITLE: Binary Decision Tree
+
+* Questions
+- what kind of analysis can we do?
+  - categorical variables and categorical label
+    - error can be calculated via accuracy
+  - continuous varibale and categorical label
+    - error can be calculated via Gini inpurity or Shannon entropy gain
+    - iris classical data frame can be compared with scikit-learn example
+  - continuous variables and continuous target
+    - error can be calculated via MSE, MAE etc
+- Which algorithm are we going to use?
+  - ID.3 greedy?
+  - CART?
+- can we use data in the stack?
+  - Not easily: we need to access features dynamically
+  - Pola.rs looks like a simple choice
+- do polars share memory when read and filtered?
+  - yes
+- what does the tree node contain?
+  - the current filtered subdataframe
+    - includes its size implicitly
+  - optionally, if not leaf:
+    - the feature used to split
+    - the feature treshold
+    - the gain
+    - the left and right branch
+- how do we build?
+  - recursive building of nodes
+- which stop rules do we apply?
+  - omogeneity of the current sample
+  - size of the sample
+  - depth level
+- how do we predict a list of values?
+  - need a specific method
+- how do we evaluate overfit?
+  - cross validation for depth
+- how do we interface the existing tree structure?
+  - composition (for extended methods), generic for embedded tree and
+    dereferencing?
+  - is it possible to have specific methods with just an implementation?
+    - by defining a trait on the content type
