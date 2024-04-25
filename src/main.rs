@@ -39,7 +39,7 @@ struct Decision<'a> {
 
 struct DTreeBuilder {
     max_level: usize,
-    min_size: usize
+    min_size: usize,
 }
 
 // uses a struct to define trees constraints
@@ -49,17 +49,17 @@ impl DTreeBuilder {
         data: DataFrame,
         level: usize,
         features: HashSet<&str>,
-        target: &str
+        target: &str,
     ) -> Option<btree::Node<Decision<'a>>> {
-        let selection : &ChunkedArray<UInt32Type> = data.column(target).unwrap().u32().unwrap();
-        let node = predict_majority(& mut selection.iter());
+        let selection: &ChunkedArray<UInt32Type> = data.column(target).unwrap().u32().unwrap();
+        let node = predict_majority(&mut selection.iter());
         todo!("implement me!")
     }
     pub fn build<'a>(
         &self,
         data: DataFrame,
-        features: HashSet<& str>,
-        target: & str
+        features: HashSet<&str>,
+        target: &str,
     ) -> btree::Tree<Decision<'a>> {
         if let Some(node) = self.build_node(data, 1, features, target) {
             btree::Tree::from_node(node)
@@ -80,8 +80,9 @@ fn gini(counts: &[u32]) -> f32 {
     result
 }
 
-fn count_groups(values: & mut dyn Iterator<Item=Option<u32>>) -> HashMap<u32, u32>{
-        values.filter_map(|s| s)
+fn count_groups(values: &mut dyn Iterator<Item = Option<u32>>) -> HashMap<u32, u32> {
+    values
+        .filter_map(|s| s)
         .fold(HashMap::new(), |mut result, value| {
             result.insert(value, result.get(&value).unwrap_or(&0) + 1);
             result
@@ -89,19 +90,18 @@ fn count_groups(values: & mut dyn Iterator<Item=Option<u32>>) -> HashMap<u32, u3
 }
 
 // when creating a node first check which would be the prodicted outcome
-fn predict_majority<'a>(values: & mut dyn Iterator<Item=Option<u32>>) -> Option<Decision<'a>> {
+fn predict_majority<'a>(values: &mut dyn Iterator<Item = Option<u32>>) -> Option<Decision<'a>> {
     let summary: HashMap<u32, u32> = count_groups(values);
-    print!("<<<<<<");
-    let (prediction, count, total) = summary
-        .iter()
-        .fold((None, 0, 0), |(result, count, total), (key, value)| {
-            if *value > count {
-                (Some(key), *value, total + value)
-            } else {
-                (result, count, total + value)
-            }
-        });
-    println!("count = {}, total = {}, confidence = {}", count, total, count as f32 / total as f32);
+    let (prediction, count, total) =
+        summary
+            .iter()
+            .fold((None, 0, 0), |(result, count, total), (key, value)| {
+                if *value > count {
+                    (Some(key), *value, total + value)
+                } else {
+                    (result, count, total + value)
+                }
+            });
     if let Some(result) = prediction {
         Some(Decision {
             rule: None,
@@ -114,31 +114,54 @@ fn predict_majority<'a>(values: & mut dyn Iterator<Item=Option<u32>>) -> Option<
 }
 
 #[cfg(test)]
-mod test{
-    use crate::{predict_majority, count_groups};
+mod test {
+    use crate::{count_groups, predict_majority};
 
     #[test]
-    fn test_count_groups(){
-        let input : [Option<u32>; 14]=[
-            Some(1u32), Some(1u32), Some(3u32), Some(2u32), None,
-            Some(1u32), None,    Some(2u32), Some(3u32), None,
-            Some(2u32), Some(2u32), None,    None];
-        let result = count_groups(& mut input.iter().map(|s| *s));
-        println!("{:?}",result);
-        assert_eq!(result.get(&2u32),Some(&4u32));
+    fn test_count_groups() {
+        let input: [Option<u32>; 14] = [
+            Some(1u32),
+            Some(1u32),
+            Some(3u32),
+            Some(2u32),
+            None,
+            Some(1u32),
+            None,
+            Some(2u32),
+            Some(3u32),
+            None,
+            Some(2u32),
+            Some(2u32),
+            None,
+            None,
+        ];
+        let result = count_groups(&mut input.iter().map(|s| *s));
+        println!("{:?}", result);
+        assert_eq!(result.get(&2u32), Some(&4u32));
     }
 
     #[test]
-    fn test_predict_majority(){
-        let input : [Option<u32>; 14]=[
-            Some(1u32), Some(1u32), Some(3u32), Some(2u32), None,
-            Some(1u32), None,    Some(2u32), Some(3u32), None,
-            Some(2u32), Some(2u32), None,    None];
-        let result = predict_majority(& mut input.iter().map(|s| *s));
+    fn test_predict_majority() {
+        let input: [Option<u32>; 14] = [
+            Some(1u32),
+            Some(1u32),
+            Some(3u32),
+            Some(2u32),
+            None,
+            Some(1u32),
+            None,
+            Some(2u32),
+            Some(3u32),
+            None,
+            Some(2u32),
+            Some(2u32),
+            None,
+            None,
+        ];
+        let result = predict_majority(&mut input.iter().map(|s| *s));
         assert!(result.is_some());
         let result = result.unwrap();
-        assert_eq!(result.prediction,2u32);
-        println!(">>>>> result = {:?}",result);
+        assert_eq!(result.prediction, 2u32);
         assert!(result.confidence < 0.5);
         assert!(result.confidence > 0.4);
     }
