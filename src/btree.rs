@@ -8,7 +8,7 @@ pub struct Node<T> {
 }
 
 impl<T> Node<T> {
-    fn new(value: T) -> Node<T> {
+    pub fn new(value: T) -> Node<T> {
         Node {
             value,
             left: None,
