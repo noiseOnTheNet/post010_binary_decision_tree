@@ -5,13 +5,16 @@ mod btree;
 use std::collections::{HashMap, HashSet};
 use std::fs::File;
 
-fn main() {
-    let df: DataFrame = df!(
+fn main() -> polars::prelude::PolarsResult<()> {
+    let mut df: DataFrame = df!(
         "integer" => &[1, 2, 3],
         "float" => &[4.0, 5.0, 6.0],
         "string" => &["a", "b", "c"],
     )
     .unwrap();
+    println!(">>>>>>>>>>>>>>> {:?}",df);
+    df.try_apply("string", |s| s.cast(& DataType::Categorical(None, CategoricalOrdering::Lexical)))?;
+    println!(">>>>>>>>>>>>>>> {:?}",df);
     let feature = "sepal_length";
     let target = "variety";
     let mut data = CsvReader::from_path("iris.csv")
@@ -19,12 +22,15 @@ fn main() {
         .has_header(true)
         .finish()
         .unwrap();
-
+    println!(">>>>>>>>>>>>>>> {:?}",data);
+    data.try_apply(target, |s| s.cast(& DataType::Categorical(None, CategoricalOrdering::Lexical)))?;
+    println!(">>>>>>>>>>>>>>> {:?}",data);
     let mut metrics = generate_all_splitting_points(& data, feature, target);
     let buffer = File::create("metrics.csv").unwrap();
     CsvWriter::new(buffer)
         .finish(&mut metrics)
         .unwrap();
+    Ok(())
 }
 
 #[derive(Debug)]
@@ -34,14 +40,14 @@ struct Rule<'a> {
     metric: f64,
 }
 
-// categorical types are mapped to u64 because:
+// categorical types are mapped to u32 because:
 // 1. do not are equivalent to rust enums which are actually sum types
 // 2. we target also 64bit execution platforms like webasm
 #[derive(Debug)]
 struct Decision<'a> {
     rule: Option<Rule<'a>>,
     confidence: f64,
-    prediction: u64,
+    prediction: u32,
 }
 
 struct DTreeBuilder {
@@ -58,9 +64,9 @@ impl DTreeBuilder {
         features: HashSet<&str>,
         target: &str,
     ) -> Option<btree::Node<Decision<'a>>> {
-        let selection: &ChunkedArray<UInt64Type> = data.column(target).unwrap().u64().unwrap();
-        let node = predict_majority(&mut selection.iter());
-        todo!("implement me!")
+        let selection: & UInt32Chunked = data.column(target).unwrap().u32().unwrap();
+        let node = predict_majority(&mut selection.iter())?;
+        Some(btree::Node::new(node))
     }
     pub fn build<'a>(
         &self,
@@ -77,8 +83,8 @@ impl DTreeBuilder {
 }
 
 // Gini impurity metric
-fn gini(counts: Vec<u64>) -> f64 {
-    let sum: u64 = counts.iter().sum();
+fn gini(counts: & [u32]) -> f64 {
+    let sum: u32 = counts.iter().sum();
     let result: f64 = 1.0
         - counts
             .iter()
@@ -89,15 +95,16 @@ fn gini(counts: Vec<u64>) -> f64 {
 
 fn dataframe_gini(data : DataFrame,target : & str) -> f64{
     let labels =  data.column(target)
-                               .unwrap()
-                               .u64()
-                               .unwrap();
+                      .unwrap()
+                      .categorical()
+                      .unwrap()
+                    .physical();
     let groups = count_groups(& mut labels.iter());
-    let groups_count : Vec<u64> = groups.values().into_iter().map(|s| *s).collect();
-    gini(groups_count)
+    let groups_count : Vec<u32> = groups.values().into_iter().map(|s| *s).collect();
+    gini(& groups_count)
 }
 
-fn count_groups(values: &mut dyn Iterator<Item = Option<u64>>) -> HashMap<u64, u64> {
+fn count_groups(values: &mut dyn Iterator<Item = Option<u32>>) -> HashMap<u32, u32> {
     values
         .filter_map(|s| s)
         .fold(HashMap::new(), |mut result, value| {
@@ -107,8 +114,8 @@ fn count_groups(values: &mut dyn Iterator<Item = Option<u64>>) -> HashMap<u64, u
 }
 
 // when creating a node first check which would be the prodicted outcome
-fn predict_majority<'a>(values: &mut dyn Iterator<Item = Option<u64>>) -> Option<Decision<'a>> {
-    let summary: HashMap<u64, u64> = count_groups(values);
+fn predict_majority<'a>(values: &mut dyn Iterator<Item = Option<u32>>) -> Option<Decision<'a>> {
+    let summary: HashMap<u32, u32> = count_groups(values);
     let (prediction, count, total) =
         summary
             .iter()
@@ -132,21 +139,25 @@ fn predict_majority<'a>(values: &mut dyn Iterator<Item = Option<u64>>) -> Option
 
 fn generate_all_splitting_points(data : & DataFrame, feature: & str, target: & str) -> DataFrame{
     let values = data.column(feature)
-        .unwrap()
+        .unwrap();
+    let unique = values
+        .unique()
+        .unwrap();
+    let unique = unique
         .f64()
         .unwrap();
-    let sorted_values : ChunkedArray<Float64Type> = values.sort(false);
+    let sorted_values : ChunkedArray<Float64Type> = unique.sort(false);
     let splitting_points = sorted_values.rolling_map_float(2,|vs| vs.mean().map(|v| v as f64))
         .unwrap();
-    let metrics : Vec<f64>= splitting_points.iter()
-        .filter_map(|s| s)
+    let metrics : Vec<Option<f64>>= splitting_points.iter()
         .map(
-            |sp| {
-                let higher = data.clone().filter(& values.gt_eq(sp))
+            |spm| {
+                let sp=spm?;
+                let higher = data.clone().filter(& values.gt_eq(sp).unwrap())
                     .unwrap();
-                let lower = data.clone().filter(& values.lt(sp))
+                let lower = data.clone().filter(& values.lt(sp).unwrap())
                     .unwrap();
-                dataframe_gini(higher, target) + dataframe_gini(lower, target)
+                Some(dataframe_gini(higher, target) + dataframe_gini(lower, target))
             }
         )
         .collect();
@@ -162,49 +173,49 @@ mod test {
 
     #[test]
     fn test_count_groups() {
-        let input: [Option<u64>; 14] = [
-            Some(1u64),
-            Some(1u64),
-            Some(3u64),
-            Some(2u64),
+        let input: [Option<u32>; 14] = [
+            Some(1u32),
+            Some(1u32),
+            Some(3u32),
+            Some(2u32),
             None,
-            Some(1u64),
+            Some(1u32),
             None,
-            Some(2u64),
-            Some(3u64),
+            Some(2u32),
+            Some(3u32),
             None,
-            Some(2u64),
-            Some(2u64),
+            Some(2u32),
+            Some(2u32),
             None,
             None,
         ];
         let result = count_groups(&mut input.iter().map(|s| *s));
         println!("{:?}", result);
-        assert_eq!(result.get(&2u64), Some(&4u64));
+        assert_eq!(result.get(&2u32), Some(&4u32));
     }
 
     #[test]
     fn test_predict_majority() {
-        let input: [Option<u64>; 14] = [
-            Some(1u64),
-            Some(1u64),
-            Some(3u64),
-            Some(2u64),
+        let input: [Option<u32>; 14] = [
+            Some(1u32),
+            Some(1u32),
+            Some(3u32),
+            Some(2u32),
             None,
-            Some(1u64),
+            Some(1u32),
             None,
-            Some(2u64),
-            Some(3u64),
+            Some(2u32),
+            Some(3u32),
             None,
-            Some(2u64),
-            Some(2u64),
+            Some(2u32),
+            Some(2u32),
             None,
             None,
         ];
         let result = predict_majority(&mut input.iter().map(|s| *s));
         assert!(result.is_some());
         let result = result.unwrap();
-        assert_eq!(result.prediction, 2u64);
+        assert_eq!(result.prediction, 2u32);
         assert!(result.confidence < 0.5);
         assert!(result.confidence > 0.4);
     }
