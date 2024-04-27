@@ -157,7 +157,7 @@ fn generate_all_splitting_points(data : & DataFrame, feature: & str, target: & s
                     .unwrap();
                 let lower = data.clone().filter(& values.lt(sp).unwrap())
                     .unwrap();
-                Some(dataframe_gini(higher, target) + dataframe_gini(lower, target))
+                Some(((higher.shape().0 as f64) *dataframe_gini(higher, target) + (lower.shape().0 as f64)*dataframe_gini(lower, target))/ (values.len() as f64))
             }
         )
         .collect();
