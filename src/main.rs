@@ -25,6 +25,8 @@ fn main() -> polars::prelude::PolarsResult<()> {
     println!(">>>>>>>>>>>>>>> {:?}",data);
     data.try_apply(target, |s| s.cast(& DataType::Categorical(None, CategoricalOrdering::Lexical)))?;
     println!(">>>>>>>>>>>>>>> {:?}",data);
+    let mut metrics = evaluate_metric(& data, feature, target);
+    println!(">>>>>>>>>>>>>>>> {:?}",metrics);
     let mut metrics = generate_all_splitting_points(& data, feature, target);
     let buffer = File::create("metrics.csv").unwrap();
     CsvWriter::new(buffer)
@@ -135,6 +137,27 @@ fn predict_majority<'a>(values: &mut dyn Iterator<Item = Option<u32>>) -> Option
     } else {
         None
     }
+}
+
+fn evaluate_metric(data : & DataFrame, feature: & str, target : & str) -> PolarsResult<DataFrame>{
+    println!("entering");
+    let values = data.column(feature)?;
+    println!("feature extracted");
+    let unique = values.unique()?;
+    println!("unique evaluated");
+    let result = df!(feature => unique)?
+        .lazy()
+        .with_columns([
+            col(feature).alias("lag_0"),
+            col(feature).shift(lit(1)).alias("lag_1")
+            //col(feature).shift(Expr::Literal(LiteralValue::UInt32(1))).alias("lag_1")
+        ])
+        // .with_column(
+        //     col("split")
+        // )
+        .collect()?;
+    println!("lag evaluated");
+    return Ok(result);
 }
 
 fn generate_all_splitting_points(data : & DataFrame, feature: & str, target: & str) -> DataFrame{
