@@ -4,7 +4,54 @@
 #+CATEGORY: Org2Blog, WordPress
 #+TAGS: Emacs, Lisp
 #+DESCRIPTION:
-#+TITLE: Binary Decision Tree
+#+TITLE: Sowing a (Decision) Tree
+
+In this post I start to build a decision tree in Rust.
+
+Decision trees are used for classification or regression and may accept
+catecorical or continuous features: in this example I will start a
+classification decision tree which accepts continuous variables.
+
+The algorithm will be greedy i.e. I will build one level at a time by choosing
+the most effective split across all features.
+
+* Evaluating the effectiveness of the algorithm
+In order to simplify the evaluation of this code against existing implementation
+(e.g. scikit-learn) I will use a well known dataset: the Iris dataset.
+
+* Loading data and choosing the environment
+For this experiment I chose the Polars crate to manage data loading and
+manipulation. While there are different ways to read data from a file, the main
+reasons that led me to this decision are the following:
+- In this algorithm I need to access the dataset features in a simple way,
+  choosing from a list of column names;
+- I need to filter the dataset iteratively; moreover I'd like to avoid
+  duplicating data if possible within this process. Polars provide a nice way to
+  share dataframes and can be filtered using reified filters in the Lazy API.
+
+There are however some cons in choosing this excellent crate:
+- Series hide the type of the data inside, so there are multiple places where I
+  have to manage possible errors while I know the data type in advance
+- it is very big crate respect to the small example I'm trying to build: in this
+  case I use a small fraction of the functionalities
+- Polars are designed to have exceptional performance with large dataset
+
+For a quick experiment pros win cons, but I may consider a smaller solution in
+specific future projects.
+
+* Evaluation of the most effective split
+Literature suggest two possible metrics to evaluate the best split: Gini's
+impurity index or Shannon's information etropy gain.
+
+* Stopping rules
+I'd like to implement three basic stopping rules:
+- the current node contains one class only
+- the current level is equal to the maximum depth provided by the user
+- the current node contains less elements than the minimum decided by the user
+
+I'm not sure about recycling some feature already splitted or not. In case I
+decide to recycle them when should I do it? Only when others have been splitted?
+Or at every iteration?
 
 * Questions
 - what kind of analysis can we do?
