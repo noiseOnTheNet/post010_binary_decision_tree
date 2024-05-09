@@ -28,6 +28,11 @@ fn main() -> polars::prelude::PolarsResult<()> {
         s.cast(&DataType::Categorical(None, CategoricalOrdering::Lexical))
     })?;
     println!(">>>>>>>>>>>>>>> {:?}", data);
+    println!(
+        ">>>>>>>>>>>>>>> {:?}",
+        data.column(target)?
+            .value_counts(true, true)
+    );
     let metrics = evaluate_metric(&data, feature, target);
     println!(">>>>>>>>>>>>>>>> {:?}", metrics);
     let mut metrics =  metrics?;
