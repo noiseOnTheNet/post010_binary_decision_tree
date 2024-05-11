@@ -50,6 +50,13 @@ fn main() -> polars::prelude::PolarsResult<()> {
         .unwrap()
         .collect()?;
     println!("\nconcat_metrics\n{1:->0$}{2:?}{1:-<0$}\n",20,"\n",concat_metrics);
+    let expr : Expr = col("metrics").lt_eq(col("metrics").min());
+    let best_split : LazyFrame= concat_metrics
+        .clone()
+        .lazy()
+        .filter(expr)
+        .select([col("feature"),col("split"),col("metrics")]);
+    println!("\nbest_split\n{1:->0$}{2:?}{1:-<0$}\n",20,"\n",best_split.collect()?);
     let buffer = File::create("metrics.csv").unwrap();
     CsvWriter::new(buffer).finish(&mut concat_metrics).unwrap();
     predict_majority_dataframe(& data, target);
