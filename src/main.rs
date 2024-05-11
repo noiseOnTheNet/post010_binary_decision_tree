@@ -66,7 +66,7 @@ fn dataframe_gini(data: & DataFrame, target: &str) -> f64 {
     gini(&groups_count)
 }
 
-fn predict_majority_dataframe(data: & DataFrame, target: &str){
+fn predict_majority_dataframe<'a>(data: & 'a DataFrame, target: &str) -> String{
     let labels = data
         .column(target)
         .unwrap()
@@ -80,11 +80,17 @@ fn predict_majority_dataframe(data: & DataFrame, target: &str){
         .unwrap()
         .head(Some(1));
     println!("{1:->0$}{2:?}{1:-<0$}",20,"\n",result_cat);
-    let actual_cat = result_cat
+    let actual_cat= result_cat
         .categorical()
+        .unwrap();
+    let string_cat: Vec<Option<&str>>=actual_cat
+        .iter_str()
+        .collect();
+    println!("{1:->0$}{2:?}{1:-<0$}",20,"\n",string_cat);
+    return string_cat.get(0)
         .unwrap()
-        .iter_str();
-    println!("{1:->0$}{2:?}{1:-<0$}",20,"\n",actual_cat);
+        .unwrap()
+        .into();
 }
 
 
