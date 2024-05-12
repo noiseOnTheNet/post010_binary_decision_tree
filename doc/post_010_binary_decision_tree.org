@@ -173,7 +173,7 @@ implementation I do not return the probability, but in I will add this in the
 next posts.
 
 #+begin_src rust
-fn predict_majority_dataframe<'a>(data: & 'a DataFrame, target: &str) -> PolarsResult<String>{
+fn predict_majority_dataframe(data: & DataFrame, target: & str) -> PolarsResult<String>{
     // extract the categorical target column
     let labels = data
         .column(target)?
@@ -215,3 +215,8 @@ fn predict_majority_dataframe<'a>(data: & 'a DataFrame, target: &str) -> PolarsR
 # images/petal_width.png https://noiseonthenet.space/noise/wp-content/uploads/2024/05/petal_width.png
 # images/sepal_length.png https://noiseonthenet.space/noise/wp-content/uploads/2024/05/sepal_length.png
 # images/sepal_width.png https://noiseonthenet.space/noise/wp-content/uploads/2024/05/sepal_width.png
+
+# images/petal_length_plot.png https://noiseonthenet.space/noise/wp-content/uploads/2024/05/petal_length_plot.png
+# images/petal_width_plot.png https://noiseonthenet.space/noise/wp-content/uploads/2024/05/petal_width_plot.png
+# images/sepal_length_plot.png https://noiseonthenet.space/noise/wp-content/uploads/2024/05/sepal_length_plot.png
+# images/sepal_width_plot.png https://noiseonthenet.space/noise/wp-content/uploads/2024/05/sepal_width_plot.png
