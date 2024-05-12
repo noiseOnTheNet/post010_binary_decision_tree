@@ -64,7 +64,6 @@ fn estimate_gini(data: & DataFrame, target: & str) -> PolarsResult<f64> {
         .column(target)?
         .categorical()?
         .value_counts()?;
-    // println!("\nlabel count\n{1:->0$}{2:?}{1:-<0$}\n",20,"\n",label_count);
 
     let expr: Expr = (col("counts")
         .cast(DataType::Float64)
@@ -76,8 +75,6 @@ fn estimate_gini(data: & DataFrame, target: & str) -> PolarsResult<f64> {
         .lazy()
         .select([expr])
         .collect()?;
-
-    // println!("\nsquared\n{1:->0$}{2:?}{1:-<0$}\n",20,"\n",squared);
 
     let square_sum: f64 = squared
         .column("squares")?
@@ -139,7 +136,7 @@ fn evaluate_metric(data: &DataFrame, feature: &str, target: &str) -> PolarsResul
         .column("split")?
         .f64()?
         .iter()
-        .flatten()
+        .flatten() // drop missing values created by lag
         .collect();
 
     // iterate over split points
