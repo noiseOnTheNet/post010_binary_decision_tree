@@ -21,7 +21,9 @@ The algorithm will be greedy i.e. I will build one level at a time by choosing
 the most effective split across all features.
 
 In order to simplify the evaluation of this code against existing implementation
-(e.g. scikit-learn) I will use a well known dataset: the Iris dataset.
+(e.g. scikit-learn) I will use a well known dataset: the [[https://en.wikipedia.org/wiki/Iris_flower_data_set][Iris dataset]].
+
+The code for this post is avaliable [[https://github.com/noiseOnTheNet/post010_binary_decision_tree][here]]
 * Loading data and choosing the environment
 For this experiment I chose the [[https://pola.rs/][Polars crate]] to manage data loading and
 manipulation. While there are different ways to read data from a file, the main
