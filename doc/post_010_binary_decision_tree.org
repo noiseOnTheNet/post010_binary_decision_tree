@@ -6,6 +6,10 @@
 #+DESCRIPTION: Starting a decision tree in Rust
 #+TITLE: Sowing a (Decision) Tree
 
+file:images/ramona-edwards-uKyj-X5qLtU-unsplash_reduced.jpg
+
+Photo by [[https://unsplash.com/@ramona623?utm_content=creditCopyText&utm_medium=referral&utm_source=unsplash][Ramona Edwards]] on [[https://unsplash.com/photos/a-close-up-of-a-flower-on-a-tree-branch-uKyj-X5qLtU?utm_content=creditCopyText&utm_medium=referral&utm_source=unsplash][Unsplash]]
+
 In this post I start to build a decision tree in Rust.
 The complete description will span across several eventual posts.
 
