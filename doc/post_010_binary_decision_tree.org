@@ -1,3 +1,5 @@
+#+BLOG: noise on the net
+#+POSTID: 469
 #+ORG2BLOG:
 #+DATE: [2024-05-12 dom 17:57]
 #+OPTIONS: toc:nil num:nil todo:nil pri:nil tags:nil ^:nil
@@ -54,19 +56,19 @@ misclassification of a sample, i.e. the probability that extracted a sample
 which belongs to a given category it is randomly assigned to any other available category.
 
 \begin{equation}
-G = \sum{c \in C}P(x|c)\sum{k \neq c}P(x|k)
+G = \sum_{c \in C}P(x|c)\sum_{k \neq c}P(x|k)
 \end{equation}
 
 as
 
 \begin{equation}
-1 - P(x|c) = \sum{k \neq c}P(x|k)
+1 - P(x|c) = \sum_{k \neq c}P(x|k)
 \end{equation}
 
 we have
 
 \begin{equation}
-G = 1 - \sum{c \in C}P(x|c)^2
+G = 1 - \sum_{c \in C}P(x|c)^2
 \end{equation}
 
 #+begin_src rust
@@ -102,7 +104,7 @@ future. Moreover in this post I assume the feature has no missing values: I will
 address this in future posts as well.
 
 #+begin_src rust
-fn evaluate_metric(data: &DataFrame, feature: &str, target: &str) -> PolarsResult<DataFrame> {
+fn evaluate_metric(data: & DataFrame, feature: & str, target: & str) -> PolarsResult<DataFrame> {
     // grabs the unique values
     let values = data.column(feature)?;
     let unique = values.unique()?;
@@ -154,13 +156,13 @@ fn evaluate_metric(data: &DataFrame, feature: &str, target: &str) -> PolarsResul
 Here are the plots of the metric at the root node: it appears that some metrics
 have more than one local minimum
 
-file:images/petal_length.png
+file:images/petal_length_plot.png
 
-file:images/petal_width.png
+file:images/petal_width_plot.png
 
-file:images/sepal_length.png
+file:images/sepal_length_plot.png
 
-file:images/sepal_width.png
+file:images/sepal_width_plot.png
 
 * Predicting a category
 Given the dataset associated to a decision tree node we should find a way to
@@ -206,3 +208,10 @@ fn predict_majority_dataframe<'a>(data: & 'a DataFrame, target: &str) -> PolarsR
         .into());
 }
 #+end_src
+
+# images/ramona-edwards-uKyj-X5qLtU-unsplash_reduced.jpg https://noiseonthenet.space/noise/wp-content/uploads/2024/05/ramona-edwards-uKyj-X5qLtU-unsplash_reduced.jpg
+
+# images/petal_length.png https://noiseonthenet.space/noise/wp-content/uploads/2024/05/petal_length.png
+# images/petal_width.png https://noiseonthenet.space/noise/wp-content/uploads/2024/05/petal_width.png
+# images/sepal_length.png https://noiseonthenet.space/noise/wp-content/uploads/2024/05/sepal_length.png
+# images/sepal_width.png https://noiseonthenet.space/noise/wp-content/uploads/2024/05/sepal_width.png
