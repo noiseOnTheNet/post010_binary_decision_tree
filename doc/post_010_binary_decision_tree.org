@@ -1,9 +1,9 @@
 #+ORG2BLOG:
-#+DATE: [2024-04-21 dom 17:57]
+#+DATE: [2024-05-12 dom 17:57]
 #+OPTIONS: toc:nil num:nil todo:nil pri:nil tags:nil ^:nil
-#+CATEGORY: Org2Blog, WordPress
-#+TAGS: Emacs, Lisp
-#+DESCRIPTION:
+#+CATEGORY: Machine learning
+#+TAGS: Rust
+#+DESCRIPTION: Starting a decision tree in Rust
 #+TITLE: Sowing a (Decision) Tree
 
 In this post I start to build a decision tree in Rust.
@@ -16,10 +16,8 @@ classification decision tree which accepts continuous variables.
 The algorithm will be greedy i.e. I will build one level at a time by choosing
 the most effective split across all features.
 
-* Evaluating the effectiveness of the algorithm
 In order to simplify the evaluation of this code against existing implementation
 (e.g. scikit-learn) I will use a well known dataset: the Iris dataset.
-
 * Loading data and choosing the environment
 For this experiment I chose the [[https://pola.rs/][Polars crate]] to manage data loading and
 manipulation. While there are different ways to read data from a file, the main
@@ -147,6 +145,17 @@ fn evaluate_metric(data: &DataFrame, feature: &str, target: &str) -> PolarsResul
 }
 #+end_src
 
+Here are the plots of the metric at the root node: it appears that some metrics
+have more than one local minimum
+
+file:images/petal_length.png
+
+file:images/petal_width.png
+
+file:images/sepal_length.png
+
+file:images/sepal_width.png
+
 * Predicting a category
 Given the dataset associated to a decision tree node we should find a way to
 return the predicted class: it can be done by choosing the most populated class.
@@ -191,53 +200,3 @@ fn predict_majority_dataframe<'a>(data: & 'a DataFrame, target: &str) -> PolarsR
         .into());
 }
 #+end_src
-* Stopping rules
-I'd like to implement three basic stopping rules:
-- the current node contains one class only
-- the current level is equal to the maximum depth provided by the user
-- the current node contains less elements than the minimum decided by the user
-
-I'm not sure about recycling some feature already splitted or not. In case I
-decide to recycle them when should I do it? Only when others have been splitted?
-Or at every iteration?
-
-* Questions
-- what kind of analysis can we do?
-  - categorical variables and categorical label
-    - error can be calculated via accuracy
-  - continuous varibale and categorical label
-    - error can be calculated via Gini inpurity or Shannon entropy gain
-    - iris classical data frame can be compared with scikit-learn example
-  - continuous variables and continuous target
-    - error can be calculated via MSE, MAE etc
-- Which algorithm are we going to use?
-  - ID.3 greedy?
-  - CART?
-- can we use data in the stack?
-  - Not easily: we need to access features dynamically
-  - Pola.rs looks like a simple choice
-- do polars share memory when read and filtered?
-  - yes
-- what does the tree node contain?
-  - the current filtered subdataframe
-    - includes its size implicitly
-  - optionally, if not leaf:
-    - the feature used to split
-    - the feature treshold
-    - the gain
-    - the left and right branch
-- how do we build?
-  - recursive building of nodes
-- which stop rules do we apply?
-  - omogeneity of the current sample
-  - size of the sample
-  - depth level
-- how do we predict a list of values?
-  - need a specific method
-- how do we evaluate overfit?
-  - cross validation for depth
-- how do we interface the existing tree structure?
-  - composition (for extended methods), generic for embedded tree and
-    dereferencing?
-  - is it possible to have specific methods with just an implementation?
-    - by defining a trait on the content type
